@@ -1,0 +1,13 @@
+/* Add your custom styles here */
+.todo-item {
+    transition: background-color 0.3s ease;
+  }
+  
+  .todo-item.completed {
+    background-color: #f0f0f0;
+  }
+  
+  #actionButtons {
+    display: none;
+  }
+  
