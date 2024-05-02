@@ -20,7 +20,7 @@ To run the Todo application locally on your machine, follow these steps:
 
 1. Clone this repository to your local machine using the following command:
 
-git clone <repository_url>
+git clone https://github.com/hashirnp/cic_offcourse_js.git
 
 
 2. Open the project folder in Visual Studio Code or any preferred code editor.
