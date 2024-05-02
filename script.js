@@ -83,7 +83,7 @@
 
   // Function to edit a task
   function editTask(id) {
-    let newName = prompt("Enter new name for the task:");
+    let newName = prompt("Update your task");
     if (newName !== null && newName.trim() !== "") {
       let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
       tasks = tasks.map((task) => {
