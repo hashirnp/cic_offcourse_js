@@ -1,222 +1,139 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const todoList = document.getElementById('todoList');
-    const taskInput = document.getElementById('taskInput');
-    const filterSelect = document.getElementById('filterSelect');
-    const addTaskBtn = document.getElementById('addTaskBtn');
-    const actionButtons = document.getElementById('actionButtons');
-    const noTodosMessage = document.getElementById('noTodosMessage');
-    const deleteTaskModal = new bootstrap.Modal(document.getElementById('deleteTaskModal'));
-    const updateTaskModal = new bootstrap.Modal(document.getElementById('updateTaskModal'));
-  
-    let todos = [];
-  
-    // Load todos from local storage
-    if (localStorage.getItem('todos')) {
-      todos = JSON.parse(localStorage.getItem('todos'));
-      renderTodos();
-    }
-  
-    function renderTodos() {
-      todoList.innerHTML = '';
-      todos.forEach((todo, index) => {
-        const todoItem = document.createElement('div');
-        todoItem.classList.add('todo-item', 'mb-2', 'p-2', 'border', 'rounded');
-        todoItem.classList.toggle('completed', todo.completed);
-        todoItem.innerHTML = `
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <input type="checkbox" ${todo.completed ? 'checked' : ''} class="mr-2">
-              <span>${todo.task}</span>
-            </div>
-            <div>
-              <button class="btn btn-sm btn-danger delete-btn ml-2" data-index="${index}">Delete</button>
-              <button class="btn btn-sm btn-secondary update-btn ml-2" data-index="${index}">Update</button>
-              <button class="btn btn-sm btn-primary complete-btn ml-2" data-index="${index}">${todo.completed ? 'Uncomplete' : 'Complete'}</button>
-            </div>
-          </div>
-        `;
-        todoList.appendChild(todoItem);
-  
-        // Add event listener to toggle completion status
-        const checkbox = todoItem.querySelector('input[type="checkbox"]');
-        checkbox.addEventListener('change', () => {
-          todos[index].completed = checkbox.checked;
-          saveTodos();
-          renderTodos();
-        });
-  
-        // Add event listener to delete todo
-        const deleteBtn = todoItem.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', () => {
-          deleteTaskModal.show();
-          const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-          confirmDeleteBtn.addEventListener('click', () => {
-            todos.splice(index, 1);
-            saveTodos();
-            deleteTaskModal.hide();
-            renderTodos();
-          });
-        });
-  
-        // Add event listener to update todo
-        const updateBtn = todoItem.querySelector('.update-btn');
-        updateBtn.addEventListener('click', () => {
-          const updatedTaskInput = document.getElementById('updatedTaskInput');
-          updatedTaskInput.value = todos[index].task;
-          updateTaskModal.show();
-          const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
-          confirmUpdateBtn.addEventListener('click', () => {
-            todos[index].task = updatedTaskInput.value;
-            saveTodos();
-            updateTaskModal.hide();
-            renderTodos();
-          });
-        });
-  
-        // Add event listener to complete todo
-        const completeBtn = todoItem.querySelector('.complete-btn');
-        completeBtn.addEventListener('click', () => {
-          todos[index].completed = !todos[index].completed;
-          saveTodos();
-          renderTodos();
-        });
-      });
-  
-      // Show action buttons if there are todos
-      actionButtons.style.display = todos.length > 0 ? 'flex' : 'none';
-  
-      // Show no todos message if there are no todos
-      noTodosMessage.style.display = todos.length === 0 ? 'block' : 'none';
-    }
-  
-    function saveTodos() {
-      localStorage.setItem('todos', JSON.stringify(todos));
-    }
-  
-    function filterTodos(filter) {
-      let filteredTodos = [];
-      if (filter === 'all') {
-        filteredTodos = todos;
-      } else if (filter === 'pending') {
-        filteredTodos = todos.filter(todo => !todo.completed);
-      } else if (filter === 'completed') {
-        filteredTodos = todos.filter(todo => todo.completed);
-      }
-      return filteredTodos;
-    }
-  
-    addTaskBtn.addEventListener('click', () => {
-      const task = taskInput.value.trim();
-      if (task !== '') {
-        todos.push({ task: task, completed: false });
-        saveTodos();
-        renderTodos();
-        taskInput.value = '';
-      } else {
-        showAlert('Please enter a task.');
+  // Function to load tasks from local storage
+  loadTasks("all");
+  function loadTasks(filterType) {
+    const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    const taskList = document.getElementById("taskList");
+    taskList.innerHTML = "";
+    tasks.forEach((task) => {
+      if (
+        (filterType === "completed" && task.completed) ||
+        (filterType === "pending" && !task.completed) ||
+        filterType === "all"
+      ) {
+        const li = document.createElement("li");
+        li.className = `list-group-item task-item`;
+        li.innerHTML = `<div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="${
+                                      task.id
+                                    }" ${
+          task.completed ? "checked" : ""
+        } onchange="toggleCompletion('${task.id}', '${filterType}')">
+                                    <label class="form-check-label ${
+                                      task.completed ? "completed" : ""
+                                    }" for="${task.id}">
+                                        ${task.name}
+                                    </label>
+                                    <button class="btn btn-sm btn-success float-right mr-2" onclick="editTask('${
+                                      task.id
+                                    }')">Edit</button> 
+                                    <button class="btn btn-sm btn-danger float-right mr-2"" onclick="deleteTask('${
+                                      task.id
+                                    }')">Delete</button>
+                                </div>`;
+        taskList.appendChild(li);
       }
     });
-  
-    filterSelect.addEventListener('change', () => {
-      const filter = filterSelect.value;
-      const filteredTodos = filterTodos(filter);
-      todoList.innerHTML = '';
-      filteredTodos.forEach(todo => {
-        const todoItem = document.createElement('div');
-        todoItem.classList.add('todo-item', 'mb-2', 'p-2', 'border', 'rounded');
-        todoItem.classList.toggle('completed', todo.completed);
-        todoItem.innerHTML = `
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <input type="checkbox" ${todo.completed ? 'checked' : ''} class="mr-2">
-              <span>${todo.task}</span>
-            </div>
-            <div>
-              <button class="btn btn-sm btn-danger delete-btn ml-2">Delete</button>
-              <button class="btn btn-sm btn-secondary update-btn ml-2">Update</button>
-              <button class="btn btn-sm btn-primary complete-btn ml-2">${todo.completed ? 'Uncomplete' : 'Complete'}</button>
-            </div>
-          </div>
-        `;
-        todoList.appendChild(todoItem);
-  
-        // Add event listener to toggle completion status
-        const checkbox = todoItem.querySelector('input[type="checkbox"]');
-        checkbox.addEventListener('change', () => {
-          const index = todos.findIndex(t => t.task === todo.task);
-          todos[index].completed = checkbox.checked;
-          saveTodos();
-          renderTodos();
-        });
-  
-        // Add event listener to delete todo
-        const deleteBtn = todoItem.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', () => {
-          const index = todos.findIndex(t => t.task === todo.task);
-          deleteTaskModal.show();
-          const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-          confirmDeleteBtn.addEventListener('click', () => {
-            todos.splice(index, 1);
-            saveTodos();
-            deleteTaskModal.hide();
-            renderTodos();
-          });
-        });
-  
-        // Add event listener to update todo
-        const updateBtn = todoItem.querySelector('.update-btn');
-        updateBtn.addEventListener('click', () => {
-          const updatedTaskInput = document.getElementById('updatedTaskInput');
-          updatedTaskInput.value = todo.task;
-          updateTaskModal.show();
-          const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
-          confirmUpdateBtn.addEventListener('click', () => {
-            const index = todos.findIndex(t => t.task === todo.task);
-            todos[index].task = updatedTaskInput.value;
-            saveTodos();
-            updateTaskModal.hide();
-            renderTodos();
-          });
-        });
-  
-        // Add event listener to complete todo
-        const completeBtn = todoItem.querySelector('.complete-btn');
-        completeBtn.addEventListener('click', () => {
-          const index = todos.findIndex(t => t.task === todo.task);
-          todos[index].completed = !todos[index].completed;
-          saveTodos();
-          renderTodos();
-        });
+    highlightFilterButton(filterType);
+  }
+
+  // Function to save tasks to local storage
+  function saveTasks(tasks) {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }
+
+  // Function to add a new task
+  function addTask() {
+    const taskInput = document.getElementById("taskInput");
+    const taskName = taskInput.value.trim();
+    if (taskName !== "") {
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      const newTask = {
+        id: Date.now().toString(),
+        name: taskName,
+        completed: false,
+      };
+      tasks.push(newTask);
+      saveTasks(tasks);
+      taskInput.value = ""; // Clear the input after adding the task
+
+      loadTasks("all");
+    }
+  }
+
+  // Function to delete a task
+  function deleteTask(id) {
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    tasks = tasks.filter((task) => task.id !== id);
+    saveTasks(tasks);
+    loadTasks("all");
+  }
+
+  // Function to toggle task completion
+  function toggleCompletion(id, filterType) {
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    tasks = tasks.map((task) => {
+      if (task.id === id) {
+        task.completed = !task.completed;
+      }
+      return task;
+    });
+    saveTasks(tasks);
+    loadTasks(filterType);
+  }
+
+  // Function to edit a task
+  function editTask(id) {
+    let newName = prompt("Enter new name for the task:");
+    if (newName !== null && newName.trim() !== "") {
+      let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks = tasks.map((task) => {
+        if (task.id === id) {
+          task.name = newName.trim();
+          task.completed = false;
+        }
+        return task;
       });
-  
-      // Show action buttons if there are todos
-      actionButtons.style.display = todos.length > 0 ? 'flex' : 'none';
-  
-      // Show no todos message if there are no todos
-      noTodosMessage.style.display = todos.length === 0 ? 'block' : 'none';
-    });
-  
-    // Add event listener to cancel delete modal
-    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-    cancelDeleteBtn.addEventListener('click', () => {
-      deleteTaskModal.hide();
-    });
-  
-    // Add event listener to close update modal
-    const closeUpdateBtn = document.getElementById('closeUpdateBtn');
-    closeUpdateBtn.addEventListener('click', () => {
-      updateTaskModal.hide();
+      saveTasks(tasks);
+      loadTasks("all");
+    }
+  }
+
+  // Function to filter tasks
+  function filterTasks(filterType) {
+    loadTasks(filterType);
+  }
+
+  // Function to highlight active filter button and focus on it
+  function highlightFilterButton(filterType) {
+    const filterButtons = document.querySelectorAll(
+      "#filterButtons button"
+    );
+    filterButtons.forEach((button) => {
+      button.classList.remove("active");
+      button.removeAttribute("autofocus"); // Remove autofocus from all buttons
     });
 
-    const cancelDeleteBtnText = document.getElementById('cancelDeleteBtnText');
-    cancelDeleteBtnText.addEventListener('click', () => {
-      deleteTaskModal.hide();
-    });
-  
-    // Add event listener to close update modal
-    const closeUpdateBtnText = document.getElementById('closeUpdateBtnText');
-    closeUpdateBtnText.addEventListener('click', () => {
-      updateTaskModal.hide();
-    });
+   
+
+    const filterButtonsContainer = document.getElementById("filterButtons");
+
+    // Get all the filter buttons within the container
+    const activeButton = document.querySelector(
+      `.filter-btn.${filterType}-btn`
+    );
+    // console.log(filterButtonss);
+
+    if (activeButton) {
+      activeButton.classList.add("active");
+      activeButton.setAttribute("autofocus", "autofocus"); // Set autofocus on the selected button
+
+      // Change color for the active filter button
+    //   activeButton.style.backgroundColor = "#ffc107"; // Yellow
+
+    }
+  }
+
+  // Highlight the filter button when the DOM content is loaded
+  document.addEventListener("DOMContentLoaded", function () {
+    highlightFilterButton("all"); // Assuming 'all' is the default filter
   });
-  
